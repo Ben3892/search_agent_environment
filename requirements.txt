@@ -1,0 +1,32 @@
+# Core data and HTTP
+numpy>=1.24
+pandas>=2.0
+pyarrow>=12.0
+datasets>=2.14
+requests>=2.31
+tqdm>=4.65
+
+# Retrieval and model inference
+torch>=2.1
+transformers>=4.51.0
+sentence-transformers>=4.1.0
+faiss-cpu>=1.8.0
+bm25s>=0.2.0
+
+# API servers
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6
+
+# SGLang is used by the recommended NVIDIA/Linux deployment path.
+sglang[all]>=0.4.9
+
+# Optional Google/Serp search servers included in src/
+aiohttp>=3.9
+beautifulsoup4>=4.12
+chardet>=5.2
+google-api-python-client>=2.120
+
+# Utilities under tools/
+Pillow>=10.0
+python-docx>=1.1

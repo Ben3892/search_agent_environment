@@ -8,7 +8,38 @@ query -> BM25 + dense embedding/FAISS 召回 -> 合并候选 -> reranker -> 搜�
 
 推荐使用 Qwen3-Embedding + Qwen3-Reranker，并通过 SGLang 提供 embedding 和 rerank 推理服务。模型和语料均可放在本地；脚本设置了 Hugging Face 离线模式，因此模型必须已经下载到本机或存在于 Hugging Face 缓存中。
 
-## 1. 运行目录和依赖
+## 1. 安装环境和依赖
+
+推荐使用与现有启动脚本一致的 Python 3.10：
+
+```bash
+cd /path/to/search_agent_environment
+python3.10 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+`requirements.txt` 覆盖离线检索、API 服务、仓库中的 Google/Serp 搜索服务以及 `tools/` 下的文档工具。推荐的 SGLang 依赖仅在 Linux 上安装；macOS 可完成静态开发和部分 CPU 测试，但不能运行本项目的 NVIDIA/SGLang 部署链路。
+
+### FAISS CPU/GPU 选择
+
+依赖文件默认安装 `faiss-cpu`，方便在普通开发环境中创建和读取 CPU 索引。如果部署时要使用脚本中的 `--faiss_gpu`，请先卸载 `faiss-cpu`，再根据服务器的 CUDA、Python 和包管理环境安装兼容的 GPU 版 FAISS：
+
+```bash
+python -m pip uninstall faiss-cpu
+# 然后使用部署环境既有的 CUDA/Conda 安装方式安装 GPU 版 FAISS。
+```
+
+GPU 版安装完成后可验证：
+
+```bash
+python -c 'import faiss; print(faiss.get_num_gpus())'
+```
+
+如果输出大于 `0`，才应在建库或启动服务时添加 `--faiss_gpu`。
+
+### 执行源码脚本
 
 后续命令均从源码目录执行，因为现有 shell 脚本使用了相对路径：
 
@@ -16,23 +47,12 @@ query -> BM25 + dense embedding/FAISS 召回 -> 合并候选 -> reranker -> 搜�
 cd src/search_agent_environment
 ```
 
-Python 侧主要依赖：
-
-- `torch`、`transformers`、`datasets`
-- `numpy`、`pandas`、`pyarrow`
-- `faiss`（使用 `--faiss_gpu` 时需要 GPU 版本）
-- `bm25s`
-- `fastapi`、`uvicorn`、`requests`
-- `sentence-transformers`
-- `sglang>=0.4.9`（使用 SGLang 后端时）
-
-仓库暂未提供统一的 `requirements.txt`。请先在已有 CUDA/Python 环境中安装上述依赖。
-
 现有 SGLang 启动脚本还包含以下机器相关配置，首次使用前应按实际环境修改：
 
 - `run_sglang_embedding.sh` 和 `run_sglang_reranker.sh` 中的 `/root/anaconda3`、`conda activate sglang` 和内部 pip 镜像。
 - 两个脚本当前都设置 `CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7` 和 `--tp 8`。单卡机器应改成对应 GPU，并把 `--tp` 改为 `1`。
 - `build_index.sh`、`build_index_sglang.sh` 和 `retrieval_rerank_server.sh` 也默认使用 8 张 GPU。
+- 如果使用上面创建的 `.venv`，还需要删除或修改两个 SGLang 启动脚本中创建 `/root/anaconda3` 和执行 `conda activate sglang` 的部分，让它们直接使用当前虚拟环境。
 
 ## 2. 准备语料
 
